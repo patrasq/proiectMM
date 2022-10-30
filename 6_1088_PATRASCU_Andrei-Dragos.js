@@ -73,7 +73,9 @@ Object.defineProperties(existingShapes, {
     push: {
         value: function () {
             arguments[0].id = existingShapes.length + 1;
-            console.log(arguments[0]);
+            if (!arguments[0].id) {
+                throw new Error('Id is not set');
+            }
             Array.prototype.push.apply(this, arguments);
             localStorage.setItem('shapes', JSON.stringify(this));
         }
@@ -114,9 +116,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     drawExistingShapes();
 
-    // set width and height of svg
+    // set width and height of svg and view box
     svg.setAttribute('width', window.innerWidth);
     svg.setAttribute('height', window.innerHeight);
+    svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+
+    // set scale
+    svg.setAttribute('transform', 'scale(1)');
 
     document.getElementById('clear').addEventListener('click', () => {
         localStorage.removeItem('shapes');
@@ -418,6 +424,11 @@ const drawShape = (shape) => {
                 }
             }
 
+            // if id is not set then set it
+            if (!newShape.hasOwnProperty('id')) {
+                newShape.id = existingShapes.length > 0 ? existingShapes[existingShapes.length - 1].id + 1 : 0;
+            }
+
             // draw shape
             createShape(shape, newShape);
 
@@ -490,6 +501,92 @@ const enableDrag = (shape) => {
     // set cursor to move
     shape.style.cursor = 'move';
 
+    // get shape most left and top position
+    const shapePosition = shape.getBoundingClientRect();
+
+    // create rect outside shape
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', shapePosition.left);
+    rect.setAttribute('y', shapePosition.top);
+    rect.setAttribute('width', shapePosition.width );
+    rect.setAttribute('height', shapePosition.height );
+    rect.setAttribute('fill', 'none');
+    rect.setAttribute('stroke', 'black');
+    rect.setAttribute('stroke-width', 2);
+    rect.setAttribute('stroke-dasharray', '5,5');
+
+    // add rotate sign
+    const rotate = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    rotate.setAttribute('text-anchor', 'middle');
+    rotate.setAttribute('dominant-baseline', 'middle');
+    rotate.setAttribute('font-size', 20);
+    rotate.setAttribute('fill', 'black');
+    rotate.innerHTML = '↻';
+    // put to bottom right corner
+    rotate.setAttribute('x', shapePosition.left + shapePosition.width);
+    rotate.setAttribute('y', shapePosition.top + shapePosition.height);
+    // while holding this clicked, enable the possibility to rotate the shape
+    rotate.addEventListener('mousedown', rotate.mousedown = (e) => {
+        // get mouse position
+        const startPosition = getMousePosition(e);
+
+        // get shape position
+        const shapePosition = shape.getBoundingClientRect();
+
+        // get shape center
+        const shapeCenter = {
+            x: shapePosition.left + shapePosition.width / 2,
+            y: shapePosition.top + shapePosition.height / 2
+        };
+
+        // get angle between mouse and shape center
+        const angle = Math.atan2(startPosition.y - shapeCenter.y, startPosition.x - shapeCenter.x);
+        
+        // get shape rotation
+        const rotation = shape.getAttribute('transform') ? parseInt(shape.getAttribute('transform').split('rotate(')[1].split(')')[0]) : 0;
+
+        // add mousemove listener
+        svg.addEventListener('mousemove', svg.mousemove = (e) => {
+            // get mouse position
+            const endPosition = getMousePosition(e);
+
+            // get angle between mouse and shape center
+            const newAngle = Math.atan2(endPosition.y - shapeCenter.y, endPosition.x - shapeCenter.x);
+
+            // calculate angle difference
+            const angleDifference = newAngle - angle;
+
+            // calculate new rotation
+            const newRotation = rotation - angleDifference * 180 / Math.PI;
+
+            // set rotation
+            shape.style.transform= `rotate(${newRotation}deg)`;
+            rect.style.transform= `rotate(${newRotation}deg)`;
+
+            // find shape in existingShapes
+            const index = existingShapes.findIndex((s) => s.id == shape.id);
+
+            // update existingShapes
+            const proxyShape = createProxy(existingShapes[index]);
+            proxyShape.transform = `rotate(${newRotation})`;
+        });
+
+        // add mouseup listener
+        svg.addEventListener('mouseup', svg.mouseup = (e) => {
+            // remove mousemove listener
+            svg.removeEventListener('mousemove', svg.mousemove);
+
+            // remove mouseup listener
+            svg.removeEventListener('mouseup', svg.mouseup);
+        });
+    });
+
+    svg.appendChild(rotate);
+
+    // add rect to svg
+    svg.appendChild(rect);
+
+
     // when dragged with mouse
     shape.addEventListener('mousedown', (e) => {
         // get shape position
@@ -517,6 +614,10 @@ const enableDrag = (shape) => {
 
             // set shape position
             shape.setAttribute('transform', `translate(${mousePosition.x + shapePosition.x}, ${mousePosition.y + shapePosition.y})`);
+
+            // set toolbar position
+            toolbar.style.top = `${mousePosition.y + shapePosition.y - 100}px`;
+            toolbar.style.left = `${mousePosition.x}px`;
         };
 
         // when mouse is released
@@ -532,7 +633,13 @@ const enableDrag = (shape) => {
 
             // add transform attr to current shape coords in existingShapes
             const index = existingShapes.findIndex((s) => s.id == shape.id);
-            //existingShapes[index].transform = transform;
+
+            // remove rect
+            svg.removeChild(rect);
+            svg.removeChild(rotate);
+
+            if (index == -1) 
+                throw new Error('Shape not found in existingShapes');
 
             const proxyShape = createProxy(existingShapes[index]);
             proxyShape.transform = transform;
@@ -552,6 +659,12 @@ const enableDrag = (shape) => {
  * @param {*} attrs 
  */
 const createShape = (shape, attrs = null) => {
+
+    if(attrs.id == null) {
+        console.table(attrs);
+        throw new Error('Shape id is null');
+    }
+
     const newShape = document.createElementNS('http://www.w3.org/2000/svg', shapes[shape].name);
 
     let attributes = attrs || shapes[shape];
@@ -559,6 +672,8 @@ const createShape = (shape, attrs = null) => {
     for (let attr in attributes) {
         newShape.setAttribute(attr, attributes[attr]);
     }
+
+    newShape.setAttribute('display', 'inline-block');
 
     newShape.addEventListener('click', () => {
         toggleToolbar(newShape);
