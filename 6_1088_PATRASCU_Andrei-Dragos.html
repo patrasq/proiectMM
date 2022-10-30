@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Andrei-Dragos PATRASCU</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="6_1088_PATRASCU_Andrei-Dragos.css" rel="stylesheet"/>
+    </head>
+    <body>
+        <!-- Editor SVG 
+            Descriere: Construirea unui editor pentru grafică vectorială folosind elementul SVG. 
+            Exemplu: Google Drawings
+            
+            1p - suport pentru adăugare elemente geometrice de bază (linie, elipsă, dreptunghi)  OK
+            0.5p - suport pentru selectarea culorii și grosimii liniei pentru adăugare 
+            2p - suport pentru selecție și ștergere / modificare elemente existente (proprietăți: culoare și grosime linie, culoare fundal) 
+            1p - suport pentru anularea ultimelor n operații (undo) 
+            1.5p - suport pentru mutare elemente utilizând mouse-ul 
+            2p - suport pentru desenare căi cu editarea ulterioară a punctelor 
+            1p - funcționalitate de export în format raster (*.png sau *.jpeg) 
+            0.5p - posibilitate salvare desen în format SVG 
+            1p - salvarea automată a desenului curent și reîncărcare la pornire cu ajutorul Web Storage API (sau a unui alt API similar)  -->
+        <div class="flex flex-col">
+            <div class="h-16 bg-gray-200 border border-b flex flex-row">
+                <div class="w-2/12 flex items-center">
+                    Drawer
+                </div>
+                <div class="w-10/12 flex flex-row items-center">
+                    <div>Export</div>
+                </div>
+            </div>
+            <div class="min-h-screen">
+                <div class="flex flex-col md:flex-row min-h-full">
+                    <div class="w-2/12 bg-gray-800 min-h-full">
+                        <div class="grid grid-cols-1 md:grid-cols-2" id="shapes">
+
+                        </div>
+                    </div>
+                    <div class="w-10/12 min-h-full">
+                        <!-- canvas -->
+                        <canvas id="canvas" class="h-full w-full"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script type="" src="6_1088_PATRASCU_Andrei-Dragos.js"></script>
+    </body>
+</html>
