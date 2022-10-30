@@ -1,4 +1,3 @@
-
 /**
  * SVG editor project for Multimedia @ ASE.
  * 
@@ -68,19 +67,35 @@ const shapes = {
 };
 
 let existingShapes = JSON.parse(localStorage.getItem('shapes')) || [];
-Object.defineProperty(existingShapes, "push", {
-    value: function () {
-        Array.prototype.push.apply(this, arguments);
-        localStorage.setItem('shapes', JSON.stringify(this));
-    }
-});
-Object.defineProperty(existingShapes, "pop", {
-    value: function () {
-        Array.prototype.pop.apply(this, arguments);
-        localStorage.setItem('shapes', JSON.stringify(this));
-    }
-});
 
+Object.defineProperties(existingShapes, {
+    push: {
+        value: function () {
+            arguments[0].id = existingShapes.length + 1;
+            console.log(arguments[0]);
+            Array.prototype.push.apply(this, arguments);
+            localStorage.setItem('shapes', JSON.stringify(this));
+        }
+    },
+    pop: {
+        value: function () {
+            Array.prototype.pop.apply(this, arguments);
+            localStorage.setItem('shapes', JSON.stringify(this));
+        }
+    },
+    filter: {
+        value: function () {
+            Array.prototype.filter.apply(this, arguments);
+            localStorage.setItem('shapes', JSON.stringify(this));
+        }
+    },
+    splice: {
+        value: function () {
+            Array.prototype.splice.apply(this, arguments);
+            localStorage.setItem('shapes', JSON.stringify(this));
+        }
+    }
+});
 document.addEventListener('DOMContentLoaded', () => {
     fillShapesMenu();
 
@@ -111,8 +126,30 @@ document.addEventListener('DOMContentLoaded', () => {
         undo();
     });
 
+    document.getElementById('loadScreen').style.display = 'none';
+
+    svg.addEventListener('click', (e) => {
+        // close all open toolbars
+        closeAllToolbars();
+
+        // if we are dragging, stop
+        if (isDragging) {
+            isDragging = false;
+            return;
+        }
+    });
 
 });
+
+/**
+ * Close all svg toolbars.
+ */
+const closeAllToolbars = () => {
+    // const toolbars = document.getElementsByClassName('toolbar');
+    // for (let i = 0; i < toolbars.length; i++) {
+    //     toolbars[i].style.display = 'none';
+    // }
+}
 
 /**
  * Undo last action
@@ -392,6 +429,9 @@ const drawShape = (shape) => {
             // draw shape
             createShape(shape, newShape);
 
+            // add to array
+            existingShapes.push(shapes[shape]);
+
             // remove preview
             svg.removeChild(window.preview);
 
@@ -414,6 +454,9 @@ const toggleToolbar = (shape) => {
 
     // set toolbar position
     toolbar.setAttribute('transform', `translate(${position.x}, ${position.y})`);
+
+    // set class
+    toolbar.setAttribute('class', 'toolbar');
 
     // create toolbar background
     const toolbarBackground = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -438,6 +481,20 @@ const toggleToolbar = (shape) => {
     toolbarButtonDelete.setAttribute('stroke-width', 1);
     toolbarButtonDelete.setAttribute('x', 0);
     toolbarButtonDelete.setAttribute('y', 0);
+
+    toolbarButtonDelete.addEventListener('click', () => {
+        // find shape in existingShapes
+        const index = existingShapes.findIndex((s) => s.id === shape.id);
+
+        // remove shape
+        existingShapes.splice(index, 1);
+
+        // remove shape from svg
+        svg.removeChild(shape);
+
+        // remove toolbar
+        svg.removeChild(toolbar);
+    });
 
     const toolbarButtonDeleteText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     toolbarButtonDeleteText.setAttribute('x', 5);
@@ -502,6 +559,60 @@ const toggleToolbar = (shape) => {
 
 };
 
+/**
+ * Enable draggable state.
+ * 
+ * @param {*} shape 
+ */
+const enableDrag = (shape) => {
+    // set cursor to move
+    shape.style.cursor = 'move';
+
+    // when dragged with mouse
+    shape.addEventListener('mousedown', (e) => {
+        // get shape position
+        const position = shape.getBoundingClientRect();
+
+        // get mouse position
+        const mousePosition = {
+            x: e.clientX,
+            y: e.clientY
+        };
+
+        // get shape position relative to mouse
+        const shapePosition = {
+            x: position.x - mousePosition.x,
+            y: position.y - mousePosition.y
+        };
+
+        // when mouse moves
+        const mouseMove = (e) => {
+            // get mouse position
+            const mousePosition = {
+                x: e.clientX,
+                y: e.clientY
+            };
+
+            // set shape position
+            shape.setAttribute('transform', `translate(${mousePosition.x + shapePosition.x}, ${mousePosition.y + shapePosition.y})`);
+        };
+
+        // when mouse is released
+        const mouseUp = () => {
+            // remove mousemove event
+            document.removeEventListener('mousemove', mouseMove);
+
+            // remove mouseup event
+            document.removeEventListener('mouseup', mouseUp);
+        };
+
+        // add mousemove event
+        document.addEventListener('mousemove', mouseMove);
+
+        // add mouseup event
+        document.addEventListener('mouseup', mouseUp);
+    });
+};
 
 /**
  * 
@@ -519,11 +630,10 @@ const createShape = (shape, attrs = null) => {
 
     newShape.addEventListener('click', () => {
         toggleToolbar(newShape);
+        enableDrag(newShape);
     });
 
     svg.appendChild(newShape);
-
-    existingShapes.push(shapes[shape]);
 };
 
 /**

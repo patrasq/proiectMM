@@ -13,15 +13,18 @@
             Exemplu: Google Drawings
             
             1p - suport pentru adăugare elemente geometrice de bază (linie, elipsă, dreptunghi)  OK
-            0.5p - suport pentru selectarea culorii și grosimii liniei pentru adăugare 
-            2p - suport pentru selecție și ștergere / modificare elemente existente (proprietăți: culoare și grosime linie, culoare fundal) 
+            0.5p - suport pentru selectarea culorii și grosimii liniei pentru adăugare  - aproape
+            2p - suport pentru selecție și ștergere / modificare elemente existente (proprietăți: culoare și grosime linie, culoare fundal) - aproape
             1p - suport pentru anularea ultimelor n operații (undo) - OK
-            1.5p - suport pentru mutare elemente utilizând mouse-ul 
-            2p - suport pentru desenare căi cu editarea ulterioară a punctelor 
+            1.5p - suport pentru mutare elemente utilizând mouse-ul - aproape
+            2p - suport pentru desenare căi cu editarea ulterioară a punctelor - aproape
             1p - funcționalitate de export în format raster (*.png sau *.jpeg) - OK
             0.5p - posibilitate salvare desen în format SVG - OK
             1p - salvarea automată a desenului curent și reîncărcare la pornire cu ajutorul Web Storage API (sau a unui alt API similar)  - OK
         -->
+        <div id="loadScreen" class="fixed h-screen w-screen bg-gradient-to-br from-black to-gray-900 flex items-center justify-center z-30">
+            <h1 class="text-white text-7xl">Loading...</h1>
+        </div>
         <div class="flex flex-col">
             <div class="h-16 bg-gray-200 border border-b flex flex-row">
                 <div class="w-2/12 flex items-center">
