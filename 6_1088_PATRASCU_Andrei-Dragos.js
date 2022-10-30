@@ -96,6 +96,18 @@ Object.defineProperties(existingShapes, {
         }
     }
 });
+
+// create proxy for member of existing shapes
+const createProxy = (object) => {
+    return new Proxy(object, {
+        set: function (target, property, value) {
+            target[property] = value;
+            localStorage.setItem('shapes', JSON.stringify(existingShapes));
+            return true;
+        }
+    });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     fillShapesMenu();
 
@@ -428,40 +440,11 @@ const toggleToolbar = (shape) => {
     // get shape position
     const position = shape.getBoundingClientRect();
 
-    // create toolbar element from <g>  
-    const toolbar = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    // put editMenu above
+    editMenu.style.top = `${position.top - 100}px`;
+    editMenu.style.left = `${position.left}px`;
 
-    // set toolbar position
-    toolbar.setAttribute('transform', `translate(${position.x}, ${position.y})`);
-
-    // set class
-    toolbar.setAttribute('class', 'toolbar');
-
-    // create toolbar background
-    const toolbarBackground = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    toolbarBackground.setAttribute('width', 150);
-    toolbarBackground.setAttribute('height', 50);
-    toolbarBackground.setAttribute('fill', '#323232');
-
-    toolbarBackground.setAttribute('rx', 5);
-    toolbarBackground.setAttribute('ry', 5);
-
-    // create toolbar buttons
-    const toolbarButtons = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    toolbarButtons.setAttribute('transform', 'translate(5, 5)');
-    toolbarButtons.setAttribute('fill', 'black');
-
-    // create toolbar buttons
-    const toolbarButtonDelete = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    toolbarButtonDelete.setAttribute('width', 20);
-    toolbarButtonDelete.setAttribute('height', 20);
-    toolbarButtonDelete.setAttribute('fill', 'red');
-    toolbarButtonDelete.setAttribute('stroke', 'black');
-    toolbarButtonDelete.setAttribute('stroke-width', 1);
-    toolbarButtonDelete.setAttribute('x', 0);
-    toolbarButtonDelete.setAttribute('y', 0);
-
-    toolbarButtonDelete.addEventListener('click', () => {
+    document.getElementById('delete').addEventListener('click', () => {
         // find shape in existingShapes
         const index = existingShapes.findIndex((s) => s.id === shape.id);
 
@@ -475,66 +458,13 @@ const toggleToolbar = (shape) => {
         svg.removeChild(toolbar);
     });
 
-    const toolbarButtonDeleteText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    toolbarButtonDeleteText.setAttribute('x', 5);
-    toolbarButtonDeleteText.setAttribute('y', 15);
-    toolbarButtonDeleteText.setAttribute('font-size', 10);
-    toolbarButtonDeleteText.setAttribute('fill', 'white');
-    toolbarButtonDeleteText.innerHTML = 'X';
-
-    const toolbarButtonEdit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    toolbarButtonEdit.setAttribute('width', 20);
-    toolbarButtonEdit.setAttribute('height', 20);
-    toolbarButtonEdit.setAttribute('fill', 'blue');
-    toolbarButtonEdit.setAttribute('stroke', 'black');
-    toolbarButtonEdit.setAttribute('stroke-width', 1);
-    toolbarButtonEdit.setAttribute('x', 25);
-    toolbarButtonEdit.setAttribute('y', 0);
-
-    const toolbarButtonEditText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    toolbarButtonEditText.setAttribute('x', 30);
-    toolbarButtonEditText.setAttribute('y', 15);
-    toolbarButtonEditText.setAttribute('font-size', 10);
-    toolbarButtonEditText.setAttribute('fill', 'white');
-    toolbarButtonEditText.innerHTML = 'E';
-
-    const toolbarButtonMove = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    toolbarButtonMove.setAttribute('width', 20);
-    toolbarButtonMove.setAttribute('height', 20);
-    toolbarButtonMove.setAttribute('fill', 'green');
-    toolbarButtonMove.setAttribute('stroke', 'black');
-    toolbarButtonMove.setAttribute('stroke-width', 1);
-    toolbarButtonMove.setAttribute('x', 50);
-    toolbarButtonMove.setAttribute('y', 0);
-
-    const toolbarButtonMoveText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    toolbarButtonMoveText.setAttribute('x', 55);
-    toolbarButtonMoveText.setAttribute('y', 15);
-    toolbarButtonMoveText.setAttribute('font-size', 10);
-    toolbarButtonMoveText.setAttribute('fill', 'white');
-    toolbarButtonMoveText.innerHTML = 'M';
-
-    // append toolbar elements to toolbar
-    toolbar.appendChild(toolbarBackground);
-    toolbar.appendChild(toolbarButtons);
-    toolbarButtons.appendChild(toolbarButtonDelete);
-    toolbarButtons.appendChild(toolbarButtonDeleteText);
-    toolbarButtons.appendChild(toolbarButtonEdit);
-    toolbarButtons.appendChild(toolbarButtonEditText);
-    toolbarButtons.appendChild(toolbarButtonMove);
-    toolbarButtons.appendChild(toolbarButtonMoveText);
-
-    // append toolbar to svg
-    svg.appendChild(toolbar);
-
-    // move toolbar with shape
-    const moveToolbar = (e) => {
+    // move toolbar as shape is moved
+    shape.addEventListener('mousemove', shape.mousemove = (e) => {
         const position = shape.getBoundingClientRect();
-        toolbar.setAttribute('transform', `translate(${position.x}, ${position.y})`);
-    };
 
-    // add toolbar to svg
-    svg.appendChild(toolbar);
+        editMenu.style.top = `${position.top - 100}px`;
+        editMenu.style.left = `${position.left}px`;
+    });
 
 };
 
@@ -583,6 +513,16 @@ const enableDrag = (shape) => {
 
             // remove mouseup event
             document.removeEventListener('mouseup', mouseUp);
+
+            // get transform attribute
+            const transform = shape.getAttribute('transform');
+
+            // add transform attr to current shape coords in existingShapes
+            const index = existingShapes.findIndex((s) => s.id == shape.id);
+            //existingShapes[index].transform = transform;
+
+            const proxyShape = createProxy(existingShapes[index]);
+            proxyShape.transform = transform;
         };
 
         // add mousemove event
