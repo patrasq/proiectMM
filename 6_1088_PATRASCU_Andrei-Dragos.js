@@ -330,6 +330,7 @@ const shapeAttributes = (shapeType, attrs) => {
             };
 
             break;
+
     }
 
     return response;
@@ -542,8 +543,11 @@ const enableDrag = (shape) => {
         // get angle between mouse and shape center
         const angle = Math.atan2(startPosition.y - shapeCenter.y, startPosition.x - shapeCenter.x);
         
-        // get shape rotation
-        const rotation = shape.getAttribute('transform') ? parseInt(shape.getAttribute('transform').split('rotate(')[1].split(')')[0]) : 0;
+        // check if shape got transform: rotate
+        const transform = shape.getAttribute('transform');
+        const deg = transform ? transform.match(/rotate\((\d+)\)/) : null;
+        const rotation = deg ? deg[1] : 0;
+
 
         // add mousemove listener
         svg.addEventListener('mousemove', svg.mousemove = (e) => {
