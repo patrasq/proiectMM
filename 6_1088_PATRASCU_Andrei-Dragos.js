@@ -128,28 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('loadScreen').style.display = 'none';
 
-    svg.addEventListener('click', (e) => {
-        // close all open toolbars
-        closeAllToolbars();
-
-        // if we are dragging, stop
-        if (isDragging) {
-            isDragging = false;
-            return;
-        }
-    });
-
 });
-
-/**
- * Close all svg toolbars.
- */
-const closeAllToolbars = () => {
-    // const toolbars = document.getElementsByClassName('toolbar');
-    // for (let i = 0; i < toolbars.length; i++) {
-    //     toolbars[i].style.display = 'none';
-    // }
-}
 
 /**
  * Undo last action
