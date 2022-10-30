@@ -15,33 +15,47 @@
             1p - suport pentru adăugare elemente geometrice de bază (linie, elipsă, dreptunghi)  OK
             0.5p - suport pentru selectarea culorii și grosimii liniei pentru adăugare 
             2p - suport pentru selecție și ștergere / modificare elemente existente (proprietăți: culoare și grosime linie, culoare fundal) 
-            1p - suport pentru anularea ultimelor n operații (undo) 
+            1p - suport pentru anularea ultimelor n operații (undo) - OK
             1.5p - suport pentru mutare elemente utilizând mouse-ul 
             2p - suport pentru desenare căi cu editarea ulterioară a punctelor 
-            1p - funcționalitate de export în format raster (*.png sau *.jpeg) 
-            0.5p - posibilitate salvare desen în format SVG 
-            1p - salvarea automată a desenului curent și reîncărcare la pornire cu ajutorul Web Storage API (sau a unui alt API similar)  -->
+            1p - funcționalitate de export în format raster (*.png sau *.jpeg) - OK
+            0.5p - posibilitate salvare desen în format SVG - OK
+            1p - salvarea automată a desenului curent și reîncărcare la pornire cu ajutorul Web Storage API (sau a unui alt API similar)  - OK
+        -->
         <div class="flex flex-col">
             <div class="h-16 bg-gray-200 border border-b flex flex-row">
                 <div class="w-2/12 flex items-center">
-                    Drawer
+                    Editor SVG
                 </div>
-                <div class="w-10/12 flex flex-row items-center">
-                    <div>Export</div>
-                </div>
-            </div>
-            <div class="min-h-screen">
-                <div class="flex flex-col md:flex-row min-h-full">
-                    <div class="w-2/12 bg-gray-800 min-h-full">
-                        <div class="grid grid-cols-1 md:grid-cols-2" id="shapes">
-
+                <div class="w-10/12 flex flex-row items-center menu gap-8">
+                    <div class="relative z-10">
+                        <span class="text-gray-500">Export</span>
+                        <div class="absolute bg-white border flex flex-col w-full z-10">
+                            <div id="export_SVG">SVG</div>
+                            <div id="export_PNG">PNG</div>
+                            <div id="export_JPEG">JPEG</div>
                         </div>
                     </div>
-                    <div class="w-10/12 min-h-full">
-                        <!-- canvas -->
-                        <canvas id="canvas" class="h-full w-full"></canvas>
+                    <div class="relative z-10">
+                        <span class="text-gray-500">Insert</span>
+                        <div class="absolute bg-white border flex flex-col w-full z-10" id="shapesMenu">
+                        </div>
                     </div>
                 </div>
+            </div>
+            <div class="min-h-screen relative z-0">
+                <div class="absolute top-10 right-10 w-36 bg-gray-300">
+                    <div id="clear">Clear</div>
+                    <div id="undo">Undo</div>
+                </div>
+                <!-- svg -->
+                <svg id="svg" width="100%" height="100%" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#000" />
+                        </marker>
+                    </defs>
+                </svg>
             </div>
         </div>
 
