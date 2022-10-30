@@ -9,6 +9,7 @@
  */
 
 const svg = document.getElementById('svg');
+const toolbar = document.getElementById('toolbar');
 
 let isDragging = false;
 var preview = null; // global
@@ -440,9 +441,21 @@ const toggleToolbar = (shape) => {
     // get shape position
     const position = shape.getBoundingClientRect();
 
-    // put editMenu above
-    editMenu.style.top = `${position.top - 100}px`;
-    editMenu.style.left = `${position.left}px`;
+    // put toolbar above
+    toolbar.style.top = `${position.top - 100}px`;
+    toolbar.style.left = `${position.left}px`;
+
+    document.getElementById('colorPicker').addEventListener('change', (e) => {
+        shape.setAttribute('fill', e.target.value);
+
+        // find shape in existingShapes
+        const index = existingShapes.findIndex((s) => s.id == shape.id);
+
+        // update existingShapes
+        const proxyShape = createProxy(existingShapes[index]);
+        proxyShape.fill = e.target.value;
+
+    });
 
     document.getElementById('delete').addEventListener('click', () => {
         // find shape in existingShapes
@@ -462,8 +475,8 @@ const toggleToolbar = (shape) => {
     shape.addEventListener('mousemove', shape.mousemove = (e) => {
         const position = shape.getBoundingClientRect();
 
-        editMenu.style.top = `${position.top - 100}px`;
-        editMenu.style.left = `${position.left}px`;
+        toolbar.style.top = `${position.top - 100}px`;
+        toolbar.style.left = `${position.left}px`;
     });
 
 };
