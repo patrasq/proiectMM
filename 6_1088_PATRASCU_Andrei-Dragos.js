@@ -8,74 +8,194 @@
  * @version 1.0 
  */
 
+/**
+ * Main SVG element.
+ */
 const svg = document.getElementById('svg');
+
+/**
+ * Toolbar.
+ */
 const toolbar = document.getElementById('toolbar');
 
+/**
+ * Shapes menu.
+ */
+const shapesMenu = document.getElementById('shapesMenu');
+
+/**
+ * Is drag enabled.
+ */
 let isDragging = false;
+
+/**
+ * Shape preview.
+ */
 var preview = null; // global
+
+/**
+ * @type Array<Shape>|null
+ */
+let existingShapes = JSON.parse(localStorage.getItem('shapes')) || [];
+
+/**
+  * 
+  */
+let lastId = existingShapes.length > 0 ? existingShapes[existingShapes.length - 1].id : 0;
+
+/**
+ * 
+ */
+const movementBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+
+/**
+ * 
+ */
+const movementRotate = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+
+/**
+ * 
+ */
+const fillColorPicker = document.getElementById('fillColorPicker');
+
+/**
+ * 
+ */
+const strokeFill = document.getElementById('strokeFill');
+
+/**
+ * 
+ */
+const strokeWidth = document.getElementById('strokeWidth');
+
+/**
+ * 
+ */
+let currentShapeEdit = null;
+
+/**
+ * Going to use classes even if it's plain js.
+ */
+class Shape extends Object {
+    constructor(type) {
+        super();
+        this.type = type;
+        
+        // find unique id
+        this.id = ++lastId;
+    }
+
+    /**
+     * Serialization.
+     * 
+     * @returns {string} 
+     */
+    json() {
+        return JSON.stringify(this);
+    }
+}
+
+class Rectangle extends Shape {
+    constructor(x, y, width, height, fill) {
+        super('rectangle');
+
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.fill = fill;
+    }
+}
+
+class Circle extends Shape {
+    constructor(cx, cy, r, fill) {
+        super('circle');
+
+        this.cx = cx;
+        this.cy = cy;
+        this.r = r;
+        this.fill = fill;
+    }
+}
+
+class Ellipse extends Shape {
+    constructor(cx, cy, rx, ry, fill) {
+        super('ellipse');
+
+        this.cx = cx;
+        this.cy = cy;
+        this.rx = rx;
+        this.ry = ry;
+        this.fill = fill;
+    }
+}
+
+class Line extends Shape {
+    constructor(x1, y1, x2, y2, stroke) {
+        super('line');
+        
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
+        this.stroke = stroke;
+    }
+}
+
+class Polygon extends Shape {
+    constructor(points, fill) {
+        super('polygon');
+
+        this.points = points;
+        this.fill = fill;
+    }
+}
+
+class Polyline extends Shape {
+    constructor(points, stroke) {
+        super('polyline');
+
+        this.points = points;
+        this.stroke = stroke;
+    }
+}
+
+class Path extends Shape {
+    constructor(d, fill, stroke) {
+        super('path');
+        
+        this.d = d;
+        this.fill = fill;
+        this.stroke = stroke;
+    }
+}
+
+class Text extends Shape {
+    constructor(x, y, text, fill) {
+        super('text');
+
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.fill = fill;
+    }
+}
+
 
 // create shapes skeleton object
 const shapes = {
-    circle: {
-        name: 'circle',
-        cx: 0,
-        cy: 0,
-        r: 0,
-        fill: 'red'
-    },
-    rectangle: {
-        name: 'rectangle',
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-        fill: 'red'
-    },
-    line: {
-        name: 'line',
-        x1: 0,
-        y1: 0,
-        x2: 0,
-        y2: 0,
-        stroke: 'red'
-    },
-    polygon: {
-        name: 'polygon',
-        points: '',
-        fill: 'red'
-    },
-    polyline: {
-        name: 'polyline',
-        points: '',
-        fill: 'red'
-    },
-    ellipse: {
-        name: 'ellipse',
-        cx: 0,
-        cy: 0,
-        rx: 0,
-        ry: 0,
-        fill: 'red'
-    },
-    path: {
-        name: 'path',
-        d: '',
-        fill: 'red',
-        stroke: 'red',
-        "stroke-width": 1,
-        "stroke-dasharray": 5
-    },
+    circle: new Circle(0, 0, 0, 'black'),
+    rectangle: new Rectangle(0, 0, 0, 0, 'black'),
+    line: new Line(0, 0, 0, 0, 'black'),
+    polygon: new Polygon('', 'black'),
+    polyline: new Polyline('', 'black'),
+    ellipse: new Ellipse(0, 0, 0, 0, 'black'),
+    path: new Path('', 'black', 'black'),
 };
-
-let existingShapes = JSON.parse(localStorage.getItem('shapes')) || [];
 
 Object.defineProperties(existingShapes, {
     push: {
         value: function () {
-            arguments[0].id = existingShapes.length + 1;
-            if (!arguments[0].id) {
-                throw new Error('Id is not set');
-            }
             Array.prototype.push.apply(this, arguments);
             localStorage.setItem('shapes', JSON.stringify(this));
         }
@@ -112,16 +232,10 @@ const createProxy = (object) => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    fillShapesMenu();
-
-    drawExistingShapes();
-
-    // set width and height of svg and view box
+    // Standardize the SVG element.
     svg.setAttribute('width', window.innerWidth);
     svg.setAttribute('height', window.innerHeight);
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
-
-    // set scale
     svg.setAttribute('transform', 'scale(1)');
 
     document.getElementById('clear').addEventListener('click', () => {
@@ -145,8 +259,10 @@ document.addEventListener('DOMContentLoaded', () => {
         undo();
     });
 
-    document.getElementById('loadScreen').style.display = 'none';
+    fillShapesMenu();
+    drawExistingShapes();
 
+    document.getElementById('loadScreen').style.display = 'none';
 });
 
 /**
@@ -215,14 +331,12 @@ const exportImage = (type) => {
 }
 
 const fillShapesMenu = () => {
-    const shapesMenu = document.getElementById('shapesMenu');
-
     for (let shape in shapes) {
         const option = document.createElement('div');
         option.classList.add('option');
-        option.innerText = shapes[shape].name;
+        option.innerText = shapes[shape].type;
         option.addEventListener('click', () => {
-            drawShape(shape);
+            previewShape(shape);
         });
 
         shapesMenu.appendChild(option);
@@ -343,7 +457,7 @@ const shapeAttributes = (shapeType, attrs) => {
  * 
  * @param {Element} shape 
  */
-const drawShape = (shape) => {
+const previewShape = (shape) => {
     // set cursor to crosshair
     svg.style.cursor = 'crosshair';
 
@@ -352,14 +466,12 @@ const drawShape = (shape) => {
         // get mouse position
         const startPosition = getMousePosition(e);
 
-        console.log(isDragging, preview);
-
         if (!isDragging) {
 
             isDragging = true;
 
             // create a preview of the shape
-            window.preview = document.createElementNS('http://www.w3.org/2000/svg', shapes[shape].name);
+            window.preview = document.createElementNS('http://www.w3.org/2000/svg', shapes[shape].type);
             for (let attr in shapes[shape]) {
                 window.preview.setAttribute(attr, shapes[shape][attr]);
             }
@@ -412,7 +524,8 @@ const drawShape = (shape) => {
             svg.style.cursor = 'default';
 
             // save shape
-            const newShape = shapes[shape];
+            const shapeClass = shapes[shape].constructor;
+            let newShape = new shapeClass({ width, height, startPosition, endPosition });
 
             // get attributes of window.preview
             const attributes = window.preview.attributes;
@@ -425,16 +538,11 @@ const drawShape = (shape) => {
                 }
             }
 
-            // if id is not set then set it
-            if (!newShape.hasOwnProperty('id')) {
-                newShape.id = existingShapes.length > 0 ? existingShapes[existingShapes.length - 1].id + 1 : 0;
-            }
+            // add to array
+            existingShapes.push(newShape);
 
             // draw shape
-            createShape(shape, newShape);
-
-            // add to array
-            existingShapes.push(shapes[shape]);
+            drawSVGShape(newShape);
 
             // remove preview
             svg.removeChild(window.preview);
@@ -449,43 +557,70 @@ const drawShape = (shape) => {
  * 
  * @param {Element} shape
  */
-const toggleToolbar = (shape) => {
+const toggleToolbar = () => {
     // get shape position
-    const position = shape.getBoundingClientRect();
+    const position = currentShapeEdit.getBoundingClientRect();
 
     // put toolbar above
     toolbar.style.top = `${position.top - 100}px`;
     toolbar.style.left = `${position.left}px`;
 
-    document.getElementById('colorPicker').addEventListener('change', (e) => {
-        shape.setAttribute('fill', e.target.value);
+    // set fillColorPicker to current fill
+    fillColorPicker.value = currentShapeEdit.getAttribute('fill');
+    strokeFill.value = currentShapeEdit.getAttribute('stroke');
+    strokeWidth.value = currentShapeEdit.getAttribute('stroke-width');
+
+    fillColorPicker.addEventListener('change', listenFillChange = (e) => {
+        currentShapeEdit.setAttribute('fill', e.target.value);
 
         // find shape in existingShapes
-        const index = existingShapes.findIndex((s) => s.id == shape.id);
+        const index = existingShapes.findIndex((s) => s.id == currentShapeEdit.id);
 
         // update existingShapes
         const proxyShape = createProxy(existingShapes[index]);
         proxyShape.fill = e.target.value;
-
     });
 
+    strokeFill.addEventListener('change', listenStrokeChange = (e) => {
+        currentShapeEdit.setAttribute('stroke', e.target.value);
+
+        // find shape in existingShapes
+        const index = existingShapes.findIndex((s) => s.id == currentShapeEdit.id);
+
+        // update existingShapes
+        const proxyShape = createProxy(existingShapes[index]);
+        proxyShape.stroke = e.target.value;
+    });
+
+    strokeWidth.addEventListener('change', listenStrokeWidthChange = (e) => {
+        console.log(e.target.value);
+        currentShapeEdit.setAttribute('stroke-width', e.target.value);
+
+        // find shape in existingShapes
+        const index = existingShapes.findIndex((s) => s.id == currentShapeEdit.id);
+
+        // update existingShapes
+        const proxyShape = createProxy(existingShapes[index]);
+        proxyShape["stroke-width"] = e.target.value;
+    });
+    
     document.getElementById('delete').addEventListener('click', () => {
         // find shape in existingShapes
-        const index = existingShapes.findIndex((s) => s.id === shape.id);
+        const index = existingShapes.findIndex((s) => s.id === currentShapeEdit.id);
 
         // remove shape
         existingShapes.splice(index, 1);
 
         // remove shape from svg
-        svg.removeChild(shape);
+        svg.removeChild(currentShapeEdit);
 
         // remove toolbar
         svg.removeChild(toolbar);
     });
 
     // move toolbar as shape is moved
-    shape.addEventListener('mousemove', shape.mousemove = (e) => {
-        const position = shape.getBoundingClientRect();
+    currentShapeEdit.addEventListener('mousemove', currentShapeEdit.mousemove = (e) => {
+        const position = currentShapeEdit.getBoundingClientRect();
 
         toolbar.style.top = `${position.top - 100}px`;
         toolbar.style.left = `${position.left}px`;
@@ -494,120 +629,131 @@ const toggleToolbar = (shape) => {
 };
 
 /**
- * Enable draggable state.
+ * Enable movement rotation.
  * 
  * @param {*} shape 
  */
-const enableDrag = (shape) => {
-    // set cursor to move
-    shape.style.cursor = 'move';
+const enableMovementRotation = (shapeElement, shapeObject, shapePosition) => {
+    movementRotate.setAttribute('text-anchor', 'middle');
+    movementRotate.setAttribute('dominant-baseline', 'middle');
+    movementRotate.setAttribute('font-size', 20);
+    movementRotate.setAttribute('fill', 'black');
+    movementRotate.innerHTML = '↻';
+     // put to bottom right corner
+     movementRotate.setAttribute('x', shapePosition.left + shapePosition.width);
+     movementRotate.setAttribute('y', shapePosition.top + shapePosition.height);
+     // while holding this clicked, enable the possibility to rotate the shape
+     movementRotate.addEventListener('mousedown', movementRotate.mousedown = (e) => {
+         // get mouse position
+         const startPosition = getMousePosition(e);
+ 
+         // get shape position
+         const shapePosition = shapeElement.getBoundingClientRect();
+ 
+         // get shape center
+         const shapeCenter = {
+             x: shapePosition.left + shapePosition.width / 2,
+             y: shapePosition.top + shapePosition.height / 2
+         };
+ 
+         // get angle between mouse and shape center
+         const angle = Math.atan2(startPosition.y - shapeCenter.y, startPosition.x - shapeCenter.x);
+         
+         // check if shape got transform: rotate
+         const transform = shapeElement.getAttribute('transform');
+         const deg = transform ? transform.match(/rotate\((\d+)\)/) : null;
+         const rotation = deg ? deg[1] : 0;
 
-    // get shape most left and top position
-    const shapePosition = shape.getBoundingClientRect();
-
-    // create rect outside shape
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', shapePosition.left);
-    rect.setAttribute('y', shapePosition.top);
-    rect.setAttribute('width', shapePosition.width );
-    rect.setAttribute('height', shapePosition.height );
-    rect.setAttribute('fill', 'none');
-    rect.setAttribute('stroke', 'black');
-    rect.setAttribute('stroke-width', 2);
-    rect.setAttribute('stroke-dasharray', '5,5');
-
-    // add rotate sign
-    const rotate = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    rotate.setAttribute('text-anchor', 'middle');
-    rotate.setAttribute('dominant-baseline', 'middle');
-    rotate.setAttribute('font-size', 20);
-    rotate.setAttribute('fill', 'black');
-    rotate.innerHTML = '↻';
-    // put to bottom right corner
-    rotate.setAttribute('x', shapePosition.left + shapePosition.width);
-    rotate.setAttribute('y', shapePosition.top + shapePosition.height);
-    // while holding this clicked, enable the possibility to rotate the shape
-    rotate.addEventListener('mousedown', rotate.mousedown = (e) => {
-        // get mouse position
-        const startPosition = getMousePosition(e);
-
-        // get shape position
-        const shapePosition = shape.getBoundingClientRect();
-
-        // get shape center
-        const shapeCenter = {
-            x: shapePosition.left + shapePosition.width / 2,
-            y: shapePosition.top + shapePosition.height / 2
-        };
-
-        // get angle between mouse and shape center
-        const angle = Math.atan2(startPosition.y - shapeCenter.y, startPosition.x - shapeCenter.x);
-        
-        // check if shape got transform: rotate
-        const transform = shape.getAttribute('transform');
-        const deg = transform ? transform.match(/rotate\((\d+)\)/) : null;
-        const rotation = deg ? deg[1] : 0;
-
-
-        // add mousemove listener
-        svg.addEventListener('mousemove', svg.mousemove = (e) => {
-            // get mouse position
-            const endPosition = getMousePosition(e);
-
-            // get angle between mouse and shape center
-            const newAngle = Math.atan2(endPosition.y - shapeCenter.y, endPosition.x - shapeCenter.x);
-
-            // calculate angle difference
-            const angleDifference = newAngle - angle;
-
-            // calculate new rotation
-            const newRotation = rotation - angleDifference * 180 / Math.PI;
-
-            // set rotation
-            shape.style.transform= `rotate(${newRotation}deg)`;
-            rect.style.transform= `rotate(${newRotation}deg)`;
-
-            // find shape in existingShapes
-            const index = existingShapes.findIndex((s) => s.id == shape.id);
-
-            // update existingShapes
-            const proxyShape = createProxy(existingShapes[index]);
-            proxyShape.transform = `rotate(${newRotation})`;
-        });
-
-        // add mouseup listener
-        svg.addEventListener('mouseup', svg.mouseup = (e) => {
-            // remove mousemove listener
-            svg.removeEventListener('mousemove', svg.mousemove);
-
-            // remove mouseup listener
-            svg.removeEventListener('mouseup', svg.mouseup);
-        });
+         // add mousemove listener
+         svg.addEventListener('mousemove', svg.mousemove = (e) => {
+             // get mouse position
+             const endPosition = getMousePosition(e);
+ 
+             // get angle between mouse and shape center
+             const newAngle = Math.atan2(endPosition.y - shapeCenter.y, endPosition.x - shapeCenter.x);
+ 
+             // calculate angle difference
+             const angleDifference = newAngle - angle;
+ 
+             // calculate new rotation
+             const newRotation = rotation - angleDifference * 180 / Math.PI;
+ 
+             // set rotation
+             shapeElement.style.transform= `rotate(${newRotation}deg)`;
+             movementBox.style.transform= `rotate(${newRotation}deg)`;
+ 
+             // find shape in existingShapes
+             const index = existingShapes.findIndex((s) => s.id == shapeElement.getAttribute('id'));
+ 
+             // update existingShapes
+             const proxyShape = createProxy(existingShapes[index]);
+             proxyShape.transform = `rotate(${newRotation})`;
+         });
+ 
+         // add mouseup listener
+         svg.addEventListener('mouseup', svg.mouseup = (e) => {
+             // remove mousemove listener
+             svg.removeEventListener('mousemove', svg.mousemove);
+ 
+             // remove mouseup listener
+             svg.removeEventListener('mouseup', svg.mouseup);
+         });
     });
 
-    svg.appendChild(rotate);
+    svg.appendChild(movementRotate);
+}
+
+/**
+ * Enable movement tools.
+ * 
+ * @param {*} shapeElement 
+ * @param {*} shapeObject 
+ */
+const enableMovementTools = (shapeElement, shapeObject) => {
+    if(!shapeObject instanceof Shape) {
+        throw new Error('Invalid shape object.');
+    }
+
+    // get shape most left and top position
+    const shapePosition = shapeElement.getBoundingClientRect();
+
+    // create rect outside shape
+    movementBox.setAttribute('x', shapePosition.left);
+    movementBox.setAttribute('y', shapePosition.top);
+    movementBox.setAttribute('width', shapePosition.width );
+    movementBox.setAttribute('height', shapePosition.height );
+    movementBox.setAttribute('fill', 'none');
+    movementBox.setAttribute('stroke', 'black');
+    movementBox.setAttribute('stroke-width', 2);
+    movementBox.setAttribute('stroke-dasharray', '5,5');
 
     // add rect to svg
-    svg.appendChild(rect);
+    svg.appendChild(movementBox);
 
+    enableMovementRotation(shapeElement, shapeObject, shapePosition);
+}
+
+/**
+ * Enable movement.
+ * 
+ * @param {*} shapeElement 
+ * @param {Shape} shapeObject 
+ */
+const enableMovement = (shapeElement, shapeObject) => {
+    if(!shapeObject instanceof Shape) {
+        throw new Error('Invalid shape object.');
+    }
+
+    enableMovementTools(shapeElement, shapeObject);
+
+    // set cursor to move
+    shapeElement.style.cursor = 'move';
+
+    // get initial position
+    const initialPosition = shapeElement.getBoundingClientRect();
 
     // when dragged with mouse
-    shape.addEventListener('mousedown', (e) => {
-        // get shape position
-        const position = shape.getBoundingClientRect();
-
-        // get mouse position
-        const mousePosition = {
-            x: e.clientX,
-            y: e.clientY
-        };
-
-        // get shape position relative to mouse
-        const shapePosition = {
-            x: position.x - mousePosition.x,
-            y: position.y - mousePosition.y
-        };
-
+    shapeElement.addEventListener('mousedown', (e) => {
         // when mouse moves
         const mouseMove = (e) => {
             // get mouse position
@@ -616,12 +762,18 @@ const enableDrag = (shape) => {
                 y: e.clientY
             };
 
-            // set shape position
-            shape.setAttribute('transform', `translate(${mousePosition.x + shapePosition.x}, ${mousePosition.y + shapePosition.y})`);
+            // translate shape to mousePosition
+            shapeElement.setAttribute('transform', `translate(${mousePosition.x - initialPosition.x}, ${mousePosition.y - initialPosition.y})`);
 
-            // set toolbar position
-            toolbar.style.top = `${mousePosition.y + shapePosition.y - 100}px`;
-            toolbar.style.left = `${mousePosition.x}px`;
+            // let currentPosition = shapeElement.getBoundingClientRect();
+
+            // // set toolbar position
+            // toolbar.style.top = `${currentPosition.y - 100}px`;
+            // toolbar.style.left = `${currentPosition.x}px`;
+
+            // move movementBox
+            // movementBox.setAttribute('x', currentPosition.x);
+            // movementBox.setAttribute('y', currentPosition.y);
         };
 
         // when mouse is released
@@ -633,17 +785,14 @@ const enableDrag = (shape) => {
             document.removeEventListener('mouseup', mouseUp);
 
             // get transform attribute
-            const transform = shape.getAttribute('transform');
+            const transform = shapeElement.getAttribute('transform');
 
             // add transform attr to current shape coords in existingShapes
-            const index = existingShapes.findIndex((s) => s.id == shape.id);
+            const index = existingShapes.findIndex((s) => s.id == shapeElement.getAttribute('id'));
 
             // remove rect
-            svg.removeChild(rect);
-            svg.removeChild(rotate);
-
-            if (index == -1) 
-                throw new Error('Shape not found in existingShapes');
+            svg.removeChild(movementBox);
+            svg.removeChild(movementRotate);
 
             const proxyShape = createProxy(existingShapes[index]);
             proxyShape.transform = transform;
@@ -655,36 +804,57 @@ const enableDrag = (shape) => {
         // add mouseup event
         document.addEventListener('mouseup', mouseUp);
     });
+}
+
+/**
+ * Enable edit state.
+ * 
+ * @param {*} shape 
+ */
+const editShape = (shape) => {
+    // Find shape in existingShapes
+    const index = existingShapes.findIndex((s) => s.id == shape.getAttribute('id'));
+
+    if (index === -1) {
+        throw new Error('Shape not found in existingShapes');
+    }
+
+    currentShapeEdit = shape;
+
+    enableMovement(currentShapeEdit, existingShapes[index]);
+    toggleToolbar(currentShapeEdit);
 };
 
 /**
+ * Draw SVG shape.
  * 
- * @param {*} shape 
- * @param {*} attrs 
+ * @param {Shape} shape 
+ * @param {Object|null} attrs 
  */
-const createShape = (shape, attrs = null) => {
-
-    if(attrs.id == null) {
-        console.table(attrs);
-        throw new Error('Shape id is null');
+const drawSVGShape = (shape, attrs = null) => {
+    if(!shape instanceof Shape) {
+        throw new Error('Given shape is not instance of Shape');
     }
 
-    const newShape = document.createElementNS('http://www.w3.org/2000/svg', shapes[shape].name);
+    const svgShape = document.createElementNS('http://www.w3.org/2000/svg', shape.type);
 
-    let attributes = attrs || shapes[shape];
+    // attrs or get property names and values from shape
+    const attributes = attrs ?? Object.keys(shape).reduce((acc, key) => {
+        acc[key] = shape[key];
+        return acc;
+    }, {});
 
     for (let attr in attributes) {
-        newShape.setAttribute(attr, attributes[attr]);
+        svgShape.setAttribute(attr, attributes[attr]);
     }
 
-    newShape.setAttribute('display', 'inline-block');
+    svgShape.setAttribute('display', 'inline-block');
 
-    newShape.addEventListener('click', () => {
-        toggleToolbar(newShape);
-        enableDrag(newShape);
+    svgShape.addEventListener('click', () => {
+        editShape(svgShape);
     });
 
-    svg.appendChild(newShape);
+    svg.appendChild(svgShape);
 };
 
 /**
@@ -694,6 +864,6 @@ const createShape = (shape, attrs = null) => {
  */
 const drawExistingShapes = () => {
     existingShapes.forEach((shape) => {
-        createShape(shape.name, shape);
+        drawSVGShape(shape);
     });
 };

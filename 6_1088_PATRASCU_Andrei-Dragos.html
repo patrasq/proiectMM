@@ -46,25 +46,25 @@
                     </div>
                 </div>
             </div>
-            <div class="min-h-screen relative z-10">
-                <div class="absolute top-10 right-10 w-36 bg-gray-300">
+            <div class="min-h-screen relative">
+                <div class="absolute top-10 right-10 w-36 bg-gray-300 z-20">
                     <div id="clear">Clear</div>
                     <div id="undo">Undo</div>
                 </div>
-                <div id="toolbar" class="absolute -top-40 left-0 bg-gradient-to-br from-gray-700 to-gray-800 text-white px-5 py-3 flex flex-row rounded-3xl gap-5" draggable="true">
+                <div id="toolbar" class="z-20 absolute -top-40 left-0 bg-gradient-to-br from-gray-700 to-gray-800 text-white px-5 py-3 flex flex-row rounded-3xl gap-5" draggable="true">
                     <div class="flex items-center justify-center flex-col">
                         <span class="text-xs">Fill</span>
-                        <input type="color" id="colorPicker" class="w-4 h-4">
+                        <input type="color" id="fillColorPicker" class="w-4 h-4">
                     </div>
                     <div class="flex items-center justify-center flex-col">
-                        <span class="text-xs">Border width</span>
+                        <span class="text-xs">Stroke width</span>
                         <div class="flex flex-row items-center">
-                            <input type="number" id="lineWidth" class="w-8 h-4 text-center text-black" value="1">px
+                            <input type="number" id="strokeWidth" class="w-8 h-4 text-center text-black" value="1">px
                         </div>
                     </div>
                     <div class="flex flex-col items-center justify-center">
                         <span class="text-xs">Border color</span>
-                        <input type="color" id="colorPicker" class="w-4 h-4 rounded-full">
+                        <input type="color" id="strokeFill" class="w-4 h-4 rounded-full">
                     </div>
                     <div id="delete" class="flex flex-col items-center justify-center">
                         <span class="text-xs">Delete</span>
