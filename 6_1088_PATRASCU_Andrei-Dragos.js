@@ -238,6 +238,12 @@ document.addEventListener('DOMContentLoaded', () => {
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
     svg.setAttribute('transform', 'scale(1)');
 
+    svg.addEventListener('click', (e) => {
+        if (e.target === svg) {
+            toolbar.style.display = 'none';
+        }
+    });
+
     document.getElementById('clear').addEventListener('click', () => {
         localStorage.removeItem('shapes');
         location.reload();
@@ -311,17 +317,21 @@ const exportSVG = () => {
  * 
  * @param {string} type 
  */
-const exportImage = (type) => {
+ const exportImage = (type) => {
     const svg = document.getElementById('svg');
     const svgData = new XMLSerializer().serializeToString(svg);
+
     const canvas = document.createElement("canvas");
+    canvas.setAttribute("width", window.innerWidth);
+    canvas.setAttribute("height", window.innerHeight);
     const ctx = canvas.getContext("2d");
+
     const img = document.createElement("img");
     img.setAttribute("src", "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData))));
+
     img.onload = function () {
         ctx.drawImage(img, 0, 0);
         const canvasdata = canvas.toDataURL("image/" + type);
-        const pngimg = '<img src="' + canvasdata + '">';
         const a = document.createElement("a");
         a.download = "image." + type;
         a.href = canvasdata;
@@ -333,7 +343,7 @@ const exportImage = (type) => {
 const fillShapesMenu = () => {
     for (let shape in shapes) {
         const option = document.createElement('div');
-        option.classList.add('option');
+        option.classList.add('option', 'px-2', 'py-1', 'text-left', 'text-black', 'rounded', 'cursor-pointer', 'hover:bg-gray-300');
         option.innerText = shapes[shape].type;
         option.addEventListener('click', () => {
             previewShape(shape);
@@ -558,6 +568,9 @@ const previewShape = (shape) => {
  * @param {Element} shape
  */
 const toggleToolbar = () => {
+
+    toolbar.style.display = 'flex';
+
     // get shape position
     const position = currentShapeEdit.getBoundingClientRect();
 
@@ -615,7 +628,13 @@ const toggleToolbar = () => {
         svg.removeChild(currentShapeEdit);
 
         // remove toolbar
-        svg.removeChild(toolbar);
+        toolbar.style.display = 'none';
+
+        // remove movementBox
+        movementBox.style.display = 'none';
+
+        // remove movementRotate
+        movementRotate.style.display = 'none';
     });
 
     // move toolbar as shape is moved
@@ -791,8 +810,13 @@ const enableMovement = (shapeElement, shapeObject) => {
             const index = existingShapes.findIndex((s) => s.id == shapeElement.getAttribute('id'));
 
             // remove rect
-            svg.removeChild(movementBox);
-            svg.removeChild(movementRotate);
+            if (svg.contains(movementBox)) {
+                svg.removeChild(movementBox);
+            }
+
+            if (svg.contains(movementRotate)) {
+                svg.removeChild(movementRotate);
+            }
 
             const proxyShape = createProxy(existingShapes[index]);
             proxyShape.transform = transform;
@@ -822,7 +846,7 @@ const editShape = (shape) => {
     currentShapeEdit = shape;
 
     enableMovement(currentShapeEdit, existingShapes[index]);
-    toggleToolbar(currentShapeEdit);
+    toggleToolbar();
 };
 
 /**

@@ -31,25 +31,25 @@
                     Editor SVG
                 </div>
                 <div class="w-10/12 flex flex-row items-center menu gap-8">
-                    <div class="relative z-20">
+                    <div class="relative z-20 group">
                         <span class="text-gray-500">Export</span>
-                        <div class="absolute bg-white border flex flex-col w-full z-20">
-                            <div id="export_SVG">SVG</div>
-                            <div id="export_PNG">PNG</div>
-                            <div id="export_JPEG">JPEG</div>
+                        <div class="hidden group-hover:block absolute bg-white border flex flex-col w-full z-20 w-16 rounded-md">
+                            <div id="export_SVG" class="px-2 py-1 text-left text-black rounded cursor-pointer hover:bg-gray-300">SVG</div>
+                            <div id="export_PNG" class="px-2 py-1 text-left text-black rounded cursor-pointer hover:bg-gray-300">PNG</div>
+                            <div id="export_JPEG" class="px-2 py-1 text-left text-black rounded cursor-pointer hover:bg-gray-300">JPEG</div>
                         </div>
                     </div>
-                    <div class="relative z-20">
+                    <div class="relative z-20 group">
                         <span class="text-gray-500">Insert</span>
-                        <div class="absolute bg-white border flex flex-col w-full z-20" id="shapesMenu">
+                        <div class="hidden group-hover:block absolute bg-white border flex flex-col w-36 z-20 rounded-md" id="shapesMenu">
                         </div>
                     </div>
                 </div>
             </div>
             <div class="min-h-screen relative">
-                <div class="absolute top-10 right-10 w-36 bg-gray-300 z-20">
-                    <div id="clear">Clear</div>
-                    <div id="undo">Undo</div>
+                <div class="absolute top-10 right-10 w-36 bg-gray-300 z-20 rounded-md">
+                    <div id="clear" class="cursor-pointer px-3 py-1 border-b border-gray-400">Clear</div>
+                    <div id="undo" class="cursor-pointer px-3 py-1">Undo</div>
                 </div>
                 <div id="toolbar" class="z-20 absolute -top-40 left-0 bg-gradient-to-br from-gray-700 to-gray-800 text-white px-5 py-3 flex flex-row rounded-3xl gap-5" draggable="true">
                     <div class="flex items-center justify-center flex-col">
